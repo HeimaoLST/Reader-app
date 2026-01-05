@@ -4,12 +4,16 @@ import okhttp3.Interceptor
 import okhttp3.Response
 import javax.inject.Inject
 
-class AuthInterceptor @Inject constructor() : Interceptor {
+class AuthInterceptor @Inject constructor(
+    private val tokenManager: TokenManager
+) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        // TODO: Inject TokenManager and add Bearer token
-        val request = chain.request().newBuilder()
-            // .addHeader("Authorization", "Bearer $token")
-            .build()
+        val token = tokenManager.getAccessToken()
+        val request = chain.request().newBuilder().apply {
+            token?.let {
+                addHeader("Authorization", "Bearer $it")
+            }
+        }.build()
         return chain.proceed(request)
     }
 }

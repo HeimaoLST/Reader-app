@@ -16,6 +16,10 @@ class HomeViewModel @Inject constructor(
     private val repository: UrlRepository
 ) : ViewModel() {
 
+    init {
+        sync()
+    }
+
     val urls: StateFlow<List<UrlEntity>> = repository.getUrls()
         .stateIn(
             scope = viewModelScope,
@@ -38,6 +42,12 @@ class HomeViewModel @Inject constructor(
     fun toggleFavorite(url: UrlEntity) {
         viewModelScope.launch {
             repository.toggleFavorite(url.id, !url.isFavorite)
+        }
+    }
+
+    fun sync() {
+        viewModelScope.launch {
+            repository.sync()
         }
     }
 }

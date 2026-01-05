@@ -9,4 +9,6 @@ interface UrlRepository {
     suspend fun addUrl(url: String)
     suspend fun deleteUrl(id: String)
     suspend fun toggleFavorite(id: String, isFavorite: Boolean)
+    suspend fun sync()
+    suspend fun getReaderView(id: String): String?
 }

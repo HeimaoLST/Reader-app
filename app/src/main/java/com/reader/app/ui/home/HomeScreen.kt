@@ -27,22 +27,41 @@ import com.reader.app.ui.components.UrlCard
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    initialSharedUrl: String? = null,
     viewModel: HomeViewModel = hiltViewModel(),
-    onNavigateToReader: (String) -> Unit
+    onNavigateToReader: (String) -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     val urls by viewModel.urls.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var clipboardUrl by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    val clipboardHelper = remember { com.reader.app.utils.ClipboardHelper(context) }
     
-    // Auto-check clipboard on detecting potential intent (simplified for now)
-    // In a real app, we might check Lifecycle.Event.ON_RESUME
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        if (initialSharedUrl != null) {
+            clipboardUrl = initialSharedUrl
+            showAddDialog = true
+        } else {
+            val url = clipboardHelper.getClipboardUrl()
+            if (url != null) {
+                clipboardUrl = url
+                showAddDialog = true
+            }
+        }
+    }
     
     if (showAddDialog) {
         AddUrlDialog(
-            onDismiss = { showAddDialog = false },
+            initialUrl = clipboardUrl ?: "",
+            onDismiss = { 
+                showAddDialog = false
+                clipboardUrl = null
+            },
             onConfirm = { url ->
                 viewModel.addUrl(url)
                 showAddDialog = false
+                clipboardUrl = null
             }
         )
     }
@@ -59,7 +78,12 @@ fun HomeScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onBackground
-                )
+                ),
+                actions = {
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(androidx.compose.material.icons.Icons.Default.Settings, contentDescription = "Settings")
+                    }
+                }
             )
         },
         floatingActionButton = {

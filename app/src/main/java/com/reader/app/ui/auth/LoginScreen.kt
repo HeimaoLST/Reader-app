@@ -32,7 +32,9 @@ import com.reader.app.ui.components.ReaderTextField
 @Composable
 fun LoginScreen(
     onLoginClick: (String, String) -> Unit,
-    onNavigateToRegister: () -> Unit
+    onNavigateToRegister: () -> Unit,
+    isLoading: Boolean = false,
+    errorMessage: String? = null
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -87,10 +89,25 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            ReaderButton(
-                text = "Sign In",
-                onClick = { onLoginClick(email, password) }
-            )
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+
+            if (isLoading) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                ReaderButton(
+                    text = "Sign In",
+                    onClick = { onLoginClick(email, password) }
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 

@@ -32,7 +32,9 @@ import com.reader.app.ui.components.ReaderTextField
 @Composable
 fun RegisterScreen(
     onRegisterClick: (String, String, String) -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    isLoading: Boolean = false,
+    errorMessage: String? = null
 ) {
     var displayName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -97,10 +99,25 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            ReaderButton(
-                text = "Create Account",
-                onClick = { onRegisterClick(email, password, displayName) }
-            )
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+
+            if (isLoading) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                ReaderButton(
+                    text = "Create Account",
+                    onClick = { onRegisterClick(email, password, displayName) }
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 

@@ -39,6 +39,11 @@ fun ReaderScreen(
     }
 
     val urlEntity by viewModel.urlEntity.collectAsState()
+    val readerContent by viewModel.readerContent.collectAsState()
+    val fontSize by viewModel.fontSize.collectAsState()
+    val readerTheme by viewModel.readerTheme.collectAsState()
+    
+    var showSettings by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -54,6 +59,11 @@ fun ReaderScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    IconButton(onClick = { showSettings = true }) {
+                        Icon(androidx.compose.material.icons.Icons.Default.Settings, contentDescription = "Reading Settings")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onBackground
@@ -61,12 +71,22 @@ fun ReaderScreen(
             )
         }
     ) { paddingValues ->
+        val backgroundColor = when (readerTheme) {
+            "dark" -> "#1A1A1A"
+            "sepia" -> "#FBF9F6"
+            else -> "#FFFFFF"
+        }
+        val textColor = when (readerTheme) {
+            "dark" -> "#E0E0E0"
+            else -> "#2D2D2D"
+        }
+        
         val css = """
             body {
-                background-color: #FBF9F6;
-                color: #2D2D2D;
+                background-color: $backgroundColor;
+                color: $textColor;
                 font-family: 'Georgia', serif;
-                font-size: 18px;
+                font-size: ${fontSize}px;
                 line-height: 1.6;
                 padding: 20px;
                 max-width: 800px;
@@ -79,14 +99,12 @@ fun ReaderScreen(
             }
             h1, h2, h3 {
                 font-family: 'Merriweather', serif;
-                color: #2D2D2D;
+                color: $textColor;
             }
             a {
                 color: #D9795F;
             }
         """.trimIndent()
-
-        val js = "var style = document.createElement('style'); style.innerHTML = `$css`; document.head.appendChild(style);"
 
         AndroidView(
             modifier = Modifier
@@ -95,20 +113,71 @@ fun ReaderScreen(
             factory = { context ->
                 WebView(context).apply {
                     settings.javaScriptEnabled = true
-                    webViewClient = object : WebViewClient() {
-                        override fun onPageFinished(view: WebView?, url: String?) {
-                            super.onPageFinished(view, url)
-                            view?.evaluateJavascript(js, null)
-                        }
-                    }
+                    webViewClient = WebViewClient()
                 }
             },
             update = { webView ->
-                urlEntity?.let { entity ->
-                    // For now, load the original URL. In future, load parsed Reader View HTML
-                    webView.loadUrl(entity.originalUrl)
+                if (readerContent != null) {
+                    val html = """
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <style>$css</style>
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        </head>
+                        <body>
+                            $readerContent
+                        </body>
+                        </html>
+                    """.trimIndent()
+                    webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+                } else {
+                    urlEntity?.let { entity ->
+                        webView.loadUrl(entity.originalUrl)
+                    }
                 }
             }
         )
+    }
+
+    if (showSettings) {
+        ModalBottomSheet(
+            onDismissRequest = { showSettings = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ) {
+            androidx.compose.foundation.layout.Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .padding(bottom = 32.dp)
+            ) {
+                Text("Appearance", style = MaterialTheme.typography.titleLarge)
+                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(24.dp))
+                
+                Text("Font Size", style = MaterialTheme.typography.labelLarge)
+                androidx.compose.material3.Slider(
+                    value = fontSize,
+                    onValueChange = { viewModel.updateFontSize(it) },
+                    valueRange = 16f..28f,
+                    steps = 6
+                )
+                
+                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(24.dp))
+                
+                Text("Theme", style = MaterialTheme.typography.labelLarge)
+                androidx.compose.foundation.layout.Row(
+                    modifier = Modifier.androidx.compose.foundation.layout.fillMaxWidth(),
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("Light" to "light", "Sepia" to "sepia", "Dark" to "dark").forEach { (label, value) ->
+                        FilterChip(
+                            selected = readerTheme == value,
+                            onClick = { viewModel.updateTheme(value) },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+            }
+        }
     }
 }

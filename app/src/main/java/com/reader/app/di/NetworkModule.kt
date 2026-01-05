@@ -31,4 +31,16 @@ object NetworkModule {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
+
+    @Provides
+    @Singleton
+    fun provideUrlApi(retrofit: Retrofit): com.reader.app.data.remote.api.UrlApi {
+        return retrofit.create(com.reader.app.data.remote.api.UrlApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthApi(retrofit: Retrofit): com.reader.app.data.remote.api.AuthApi {
+        return retrofit.create(com.reader.app.data.remote.api.AuthApi::class.java)
+    }
 }
